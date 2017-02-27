@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>WIzard quest 1.1</title>
+	<script
+  src="https://code.jquery.com/jquery-3.1.1.js"
+  integrity="sha256-16cdPddA6VdVInumRGo6IbivbERE8p7CQR3HzTBuELA="
+  crossorigin="anonymous"></script>
+</head>
+<body>
+<div style="display: none;">
+	<img src="images/background.png" id="background">
+	<img src="images/player.png" id="player">
+	<img src="images/platform.png" id="platform1">
+	<img src="images/fireball.png" id="fireball">
+	<img src="images/enemy.png" id="enemy">
+	<img src="images/deadenemy.png" id="deadenemy">
+</div>
+<canvas id="canvas" width="1800" height="800" style="border: 1px solid #000000;"></canvas>
+<script type="text/javascript">
+	var ctx = document.getElementById("canvas").getContext("2d");
+	var background = document.getElementById("background");
+	var bg_x_coord = 0;
+	var playerImg = document.getElementById("player");
+	var player = {
+		x: 40,
+		y: 650
+	}
+	var collision = {
+		x: 0,
+		y: 0
+	}
+	var jumpTime = 0;
+	var jump = false;
+	var moving = {
+		right: false,
+		left: false
+	}
+	var badGuy = {
+		x: 1400,
+		y: 650,
+		alive: true
+	}
+	var castSpell = function(direction){ //take in var movingRight as a parameter to determine which direction spell should move;
+		if(direction){
+			this.direction = "right";
+		}else{
+			this.direction = "left";
+		}
+		this.x = player.x;
+		this.y = player.y + 10;
+	}
+	var activeSpells = [];
+	var colliding = false;
+	var falling = false;
+	var movingplat = true;
+	var facingRight = true;
+	document.onkeydown = function(keyCode){
+		if(keyCode.code == 'KeyD'){
+			moving.right = true;
+			facingRight = true;
+		}
+		if(keyCode.code == 'KeyA'){
+			moving.left = true;
+			facingRight = false;
+		}
+		if(keyCode.code == 'Space'){
+			if(falling){
+				console.log("Cant jump while falling")
+			}else{
+				jump = true;
+			}
+		}
+		if(keyCode.code == "KeyE"){
+			activeSpells.push(new castSpell(facingRight)); //add new spell object to activeSpells array
+		}
+	}
+	document.onkeyup = function(keyCode){
+		if(keyCode.code == 'KeyD'){
+			moving.right = false;
+		}
+		if(keyCode.code == 'KeyA'){
+			moving.left = false;
+		}
+	}
+	//Main Game Animation Loop
+	function mainUpdate(){
+		var platform = {
+			x: 550 + collision.x,
+			y: 600
+		}
+		if(player.y < 650){
+			falling = true;
+		}
+		if(falling){
+			if(player.y < 650 && !jump && !colliding){
+				player.y += 5;
+			}else if(player.y == 650){
+				falling = false;
+			}
+		}
+		if(jump == true){
+			if(jumpTime >= 30){
+				jumpTime = 0;
+				jump = false;
+			}else if(jumpTime < 30){
+				player.y -= 5;
+				jumpTime ++;
+			}
+		}
+		if(moving.right){
+			if(player.x >= 1600){
+				bg_x_coord -= 4; // When near the right side of the screen , scroll the BG image instead of moving the player.
+				collision.x -= 4; // Also move the collidable object
+			}else{
+				player.x += 4;
+			}
+		}
+		if(moving.left){
+			if(player.x <= 20){
+				bg_x_coord += 4;
+				collision.x += 4;
+			}else{
+				player.x -= 4;
+			}
+		}
+		if(player.y == platform.y - 80 && player.x >= platform.x - 20 && player.x <= platform.x + 40){
+			colliding = true;
+			falling = false;
+			console.log("colliding!")
+		}
+		else if(player.y == 500 - 80 && player.x >= 680 && player.x <= 740){
+			colliding = true;
+			falling = false;
+			console.log("colliding!")
+		}else{
+			colliding = false;
+		}if(movingplat){
+			collision.x -= 1;
+		}if(platform.x < 300){
+			movingplat = false
+		}
+		if(movingplat == false){
+			collision.x += 1;
+		}if(platform.x > 750){
+			movingplat = true;
+		}
+		if(badGuy.alive){
+			if(badGuy.x > player.x){
+				badGuy.x -= 3;
+			}else{
+				badGuy.x += 3;
+			}
+		}
+		ctx.clearRect(0,0,1800,800);
+		ctx.drawImage(background, bg_x_coord, 0)
+		ctx.drawImage(playerImg, player.x, player.y)
+		if(badGuy.alive){
+			ctx.drawImage(enemy, badGuy.x, badGuy.y)
+		}else{
+			ctx.drawImage(deadenemy, badGuy.x, badGuy.y +90)
+		}
+		ctx.drawImage(platform1, platform.x, platform.y)
+		ctx.drawImage(platform1, 700, 500)
+		if(activeSpells.length > 0){
+			console.log(activeSpells)
+			for(var i = 0; i < activeSpells.length; i++){
+				if(activeSpells[i].direction == "right"){
+					activeSpells[i].x += 7	
+				}else{
+					activeSpells[i].x -= 7
+				}
+				if(activeSpells[i].x <= badGuy.x + 5 && activeSpells[i].x >= badGuy.x -5){
+					badGuy.alive = false;
+				}
+				ctx.drawImage(fireball, activeSpells[i].x, activeSpells[i].y)
+			}
+		}
+	}
+	setInterval(mainUpdate, 15);
+</script>
+<p>Controls-  Move: W A S D   Jump: SPACE  Cast Spells: E</p>
+</body>
+</html>
